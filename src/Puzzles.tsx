@@ -8,15 +8,15 @@ import {
     DrawerTrigger,
 } from "@/components/ui/drawer"
 
-const Puzzle: React.FC = () => {
+const Puzzle: React.FC<{ name: string }> = ({ name }) => {
     const navigate = useNavigate();
 
     return (
         <div className="flex flex-col bg-black w-auto min-h-screen font-ibm">
             {/* Navbar */}
             <div className="flex justify-between items-center pt-8">
-                <h1 className="border-white font-medium tracking-widest ml-6 pl-2 text-white border-t border-l text-[50px]">
-                    ALIEN 001
+                <h1 className="border-white font-medium tracking-widest ml-6 pl-2 text-white border-t border-l text-[50px] uppercase">
+                    {name}
                 </h1>
                 <Drawer>
                     <DrawerTrigger asChild={true} className="mr-4">
@@ -58,25 +58,25 @@ const Puzzle: React.FC = () => {
 
 const FiumePuzzle: React.FC = () => {
     return (
-        <Puzzle />
+        <Puzzle name="fiume"/>
     )
 }
 
 const GelataPuzzle: React.FC = () => {
     return (
-        <Puzzle />
+        <Puzzle name="gelata"/>
     )
 }
 
 const NuvolaPuzzle: React.FC = () => {
     return (
-        <Puzzle />
+        <Puzzle name="nuvola"/>
     )
 }
 
 const ScoglioPuzzle: React.FC = () => {
     return (
-        <Puzzle />
+        <Puzzle name="scoglio"/>
     )
 }
 
