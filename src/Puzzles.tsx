@@ -1,5 +1,5 @@
 import React from 'react';
-import bgImg from './assets/puzzle_background.svg';
+import puzzleImg from './assets/puzzle_background.svg';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
@@ -36,7 +36,7 @@ const Puzzle: React.FC = () => {
                 
             </div>
             {/* Play Area */}
-            <div className="flex flex-1 justify-center" style={{ backgroundImage: `url(${bgImg})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain'}}>
+            <div className="flex flex-1 justify-center" style={{ backgroundImage: `url(${puzzleImg})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain'}}>
                 <div className="w-4/5 bg-gray-800 bg-opacity-40 shadow-lg"></div>
             </div>
             {/* Input and return */}
