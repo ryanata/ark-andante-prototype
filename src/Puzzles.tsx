@@ -1,5 +1,4 @@
 import React from 'react';
-import puzzleImg from './assets/puzzle_background.svg';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +10,7 @@ import {
 
 const Puzzle: React.FC = () => {
     const navigate = useNavigate();
-    console.log(puzzleImg);
+
     return (
         <div className="flex flex-col bg-black w-auto min-h-screen font-ibm">
             {/* Navbar */}
