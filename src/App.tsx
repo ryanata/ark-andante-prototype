@@ -14,7 +14,7 @@ const App: React.FC = () => {
   const isTablet = useMediaQuery('(max-width: 1430px)');
   const isMobile = useMediaQuery('(max-width: 768px)');
   const topPadding = isMobile ? "pt-8" : isTablet ? "pt-4" : "";
-  
+  console.log(bgImg);
   const aliens = [
     {
       title: 'Fiume',

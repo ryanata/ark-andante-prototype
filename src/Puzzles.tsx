@@ -11,7 +11,7 @@ import {
 
 const Puzzle: React.FC = () => {
     const navigate = useNavigate();
-
+    console.log(puzzleImg);
     return (
         <div className="flex flex-col bg-black w-auto min-h-screen font-ibm">
             {/* Navbar */}
@@ -20,7 +20,7 @@ const Puzzle: React.FC = () => {
                     ALIEN 001
                 </h1>
                 <Drawer>
-                    <DrawerTrigger>
+                    <DrawerTrigger asChild={true} className="mr-4">
                         <Button variant="outline" className="mr-4">
                             <Icon icon="material-symbols-light:book-sharp" />
                             <span>Reference</span>
