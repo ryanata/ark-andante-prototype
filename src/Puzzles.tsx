@@ -36,7 +36,7 @@ const Puzzle: React.FC = () => {
                 
             </div>
             {/* Play Area */}
-            <div className="flex flex-1 justify-center" style={{ backgroundImage: `url(${puzzleImg})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain'}}>
+            <div className="flex flex-1 justify-center" style={{ backgroundImage: `url(https://utfs.io/f/440babb5-a815-4448-b826-fe48f1e75df9-vnev2n.svg)`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain'}}>
                 <div className="w-4/5 bg-gray-800 bg-opacity-40 shadow-lg"></div>
             </div>
             {/* Input and return */}
