@@ -4,7 +4,8 @@ import audioAlien from './assets/audio_alien.png';
 import danceAlien from './assets/dance_alien.png';
 import fogAlien from './assets/fog_alien.png';
 import signLangAlien from './assets/sign_lang_alien.png';
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/ui/badge";
+import { useNavigate } from 'react-router-dom';
 
 
 import { useMediaQuery } from '@/components/utils/useMediaQuery';
@@ -18,7 +19,7 @@ const App: React.FC = () => {
     {
       title: 'Fiume',
       image: audioAlien,
-      description: "The Fiume, from Laguna's Braccio di Mare, use echolocation for communication and nutrient absorption. They train to fight deep-sea creatures."
+      description: "Spawning from Laguna's Braccio di Mare, Fiume use echolocation for communication and nutrient absorption."
     },
     {
       title: 'Gelata',
@@ -54,8 +55,13 @@ interface CardProps {
 }
 
 const Card: React.FC<CardProps> = ({ title, image, description }) => {
+  const navigate = useNavigate();
   return (
-    <div className="w-80 h-[420px] rounded-2xl font-teko tracking-widest text-white pt-4 px-3 overflow-none cursor-pointer border border-seagreen hover:border-4 transform hover:scale-105 transition-transform duration-200" style={{background: 'linear-gradient(153deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0) 100%)', backdropFilter: 'blur(22px)'}}>      
+    <div 
+      className="w-80 h-[420px] rounded-2xl font-teko tracking-widest text-white pt-4 px-3 overflow-none cursor-pointer border border-seagreen hover:border-4 transform hover:scale-105 transition-transform duration-200" 
+      style={{background: 'linear-gradient(153deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0) 100%)', backdropFilter: 'blur(22px)'}}
+      onClick={() => navigate(title.toLowerCase())}
+    >      
       <h1 className="text-2xl text-center">
         {title}
       </h1>
