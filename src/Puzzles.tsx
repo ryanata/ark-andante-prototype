@@ -3,6 +3,11 @@ import bgImg from './assets/puzzle_background.svg';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerTrigger,
+} from "@/components/ui/drawer"
 
 const Puzzle: React.FC = () => {
     const navigate = useNavigate();
@@ -14,10 +19,21 @@ const Puzzle: React.FC = () => {
                 <h1 className="border-white font-medium tracking-widest ml-6 pl-2 text-white border-t border-l text-[50px]">
                     ALIEN 001
                 </h1>
-                <Button variant="outline" className="mr-4">
-                    <Icon icon="material-symbols-light:book-sharp" />
-                    <span>Reference</span>
-                </Button>
+                <Drawer>
+                    <DrawerTrigger>
+                        <Button variant="outline" className="mr-4">
+                            <Icon icon="material-symbols-light:book-sharp" />
+                            <span>Reference</span>
+                        </Button>
+                    </DrawerTrigger>
+                    <DrawerContent className="h-1/2">
+                        <div className="flex justify-between mx-4 text-stone-500">
+                            <h1 className="text-[50px]">TRANSLATIONS</h1>
+                            <h1 className="text-[50px]">GRAMMAR</h1>
+                        </div>
+                    </DrawerContent>
+                </Drawer>
+                
             </div>
             {/* Play Area */}
             <div className="flex flex-1 justify-center" style={{ backgroundImage: `url(${bgImg})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain'}}>
