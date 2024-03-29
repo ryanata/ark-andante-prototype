@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
@@ -7,10 +7,49 @@ import {
     DrawerContent,
     DrawerTrigger,
 } from "@/components/ui/drawer"
+import localForage from 'localforage';
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from "@/components/ui/carousel"
 
-const Puzzle: React.FC<{ name: string, translationContent: JSX.Element }> = ({ name, translationContent }) => {
+const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: string, children?: React.ReactNode }> = ({ name, translationContent, answer, children }) => {
     const navigate = useNavigate();
+    const [answerInput, setAnswerInput] = useState("");
+    const cleanInput = (input: string) => {
+        const lowerInput = input.toLowerCase();
+        // Remove everything but letters and spaces
+        const cleanedInput = lowerInput.replace(/[^a-z ]/g, '');
+        return cleanedInput;
+    }
+    const verifyAnswer = (input: string) => {
+        const cleanedInput = cleanInput(input);
+        return cleanedInput === answer;
+    }
 
+    // Save input to localForage
+    const saveInput = async (input: string) => {
+        await localForage.setItem(`answerInput_${name}`, input);
+    }
+
+    // Load input from localForage
+    const loadInput = async () => {
+        const savedInput = await localForage.getItem(`answerInput_${name}`);
+        if (savedInput) {
+            setAnswerInput(savedInput.toString());
+        }
+    }
+
+    // Load input when component mounts
+    useEffect(() => {
+        loadInput();
+    }, []);
+
+    const correctAnswer = answerInput && verifyAnswer(answerInput);
+    const answerBottomBorder = answerInput ? (correctAnswer ? "border-green-500": "border-red-600") : "border-white";
     return (
         <div className="flex flex-col bg-black w-auto min-h-screen font-ibm">
             {/* Navbar */}
@@ -39,14 +78,27 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element }> = ({ n
             </div>
             {/* Play Area */}
             <div className="flex flex-1 justify-center" style={{ backgroundImage: `url(https://utfs.io/f/440babb5-a815-4448-b826-fe48f1e75df9-vnev2n.svg)`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain'}}>
-                <div className="w-4/5 bg-gray-800 bg-opacity-40 shadow-lg"></div>
+                <div className="w-4/5 bg-gray-800 bg-opacity-40 shadow-lg">
+                    {children}
+                </div>
             </div>
             {/* Input and return */}
             <div className="flex flex-col gap-12 mt-2">
                 <div className="w-4/5 text-white mx-auto mb-2 text-2xl">
-                    <input className="border-none bg-transparent w-full" placeholder="TRANSLATE THE ALIEN COMMUNICATION">
-                    </input>
-                    <div className="border-t border-white w-full"></div>
+                    <div className="flex relative">
+                        <input 
+                            className="border-none bg-transparent w-full uppercase outline-offset-8" 
+                            placeholder="TRANSLATE THE ALIEN COMMUNICATION"
+                            value={answerInput}
+                            onChange={e => {
+                                setAnswerInput(e.target.value);
+                                saveInput(e.target.value);
+                            }}
+                        />
+                        {answerInput && !correctAnswer && <Icon className="absolute right-1 mt-1" icon="zondicons:close-solid" color="red"/>}
+                    </div>
+                   
+                    <div className={`border-t ${answerBottomBorder} w-full`}></div>
                 </div>
                 <div className="flex justify-left ml-4 mb-4">
                     <Button variant="outline" onClick={() => navigate("/")}>
@@ -61,7 +113,8 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element }> = ({ n
 
 const FiumePuzzle: React.FC = () => {
     return (
-        <Puzzle name="fiume" translationContent={<FiumeTranslationContent/>} />
+        <Puzzle name="fiume" translationContent={<FiumeTranslationContent/>} answer="">
+        </Puzzle>
     )
 }
 
@@ -164,7 +217,8 @@ const FiumeTranslationContent: React.FC = () => {
 
 const GelataPuzzle: React.FC = () => {
     return (
-        <Puzzle name="gelata" translationContent={<GelataPuzzleContent/>}/>
+        <Puzzle name="gelata" translationContent={<GelataPuzzleContent/>} answer="">
+        </Puzzle>
     )
 }
 
@@ -253,7 +307,8 @@ const GelataPuzzleContent: React.FC = () => {
 
 const NuvolaPuzzle: React.FC = () => {
     return (
-        <Puzzle name="nuvola" translationContent={<NuvolaPuzzleContent/>}/>
+        <Puzzle name="nuvola" translationContent={<NuvolaPuzzleContent/>} answer="">
+        </Puzzle>
     )
 }
 
@@ -277,7 +332,7 @@ const NuvolaPuzzleContent: React.FC = () => {
         {
             title: "wing",
             translation: "Go\"/\"Fly",
-            link: "https://utfs.io/f/f294b6fc-8ef0-4d01-9a6a-e890bf685164-1lsff.svg"
+            link: "https://utfs.io/f/ff82074b-2f0f-4215-afd9-517bc8fde347-1lsff.svg"
         },
         {
             title: "forest",
@@ -328,12 +383,6 @@ const NuvolaPuzzleContent: React.FC = () => {
 }
 
 const ScoglioPuzzle: React.FC = () => {
-    return (
-        <Puzzle name="scoglio" translationContent={<ScoglioPuzzleContent/>}/>
-    )
-}
-
-const ScoglioPuzzleContent: React.FC = () => {
     const signLanguage = [
         {
             title: "sign_hands",
@@ -390,7 +439,36 @@ const ScoglioPuzzleContent: React.FC = () => {
             translation: "About",
             link: "https://utfs.io/f/02dfd489-5789-40f3-b304-68588fe8a0ba-m47ofe.png"
         }
-    ]
+    ];
+    const answer = "tell me story about your home";
+    // Split the answer into an array of words
+    const answerWords = answer.split(' ');
+    // Filter the signLanguage array to only include items that match a word in the answer
+    const relevantSigns = answerWords.map(word => 
+        signLanguage.find(sign => sign.translation.toLowerCase() === word)
+    ).filter(Boolean); // remove undefined items if any word is not found
+    return (
+        <Puzzle name="scoglio" translationContent={<ScoglioPuzzleContent signLanguage={signLanguage}/>} answer={answer}>
+            <div className="h-full flex justify-center items-center">
+                <div className="w-[50%]">
+                    <Carousel>
+                        <CarouselContent>
+                            {relevantSigns.map((handSign, index) => (
+                                <CarouselItem key={index} className="flex justify-center items-center">
+                                    <img src={handSign?.link} alt={handSign?.title} />
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious/>
+                        <CarouselNext />
+                    </Carousel>
+                </div>
+            </div>
+        </Puzzle>
+    )
+}
+
+const ScoglioPuzzleContent: React.FC<{ signLanguage: { title: string, translation: string, link: string }[] }> = ({ signLanguage }) => {
     return (
         <div className="flex flex-wrap justify-between gap-x-2 gap-y-8">
             {signLanguage.map((handSign, index) => {
