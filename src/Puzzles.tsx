@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useData } from './components/utils/DataContext';
 import { Button } from '@/components/ui/button';
-import { ArkGameData } from './gameData';
+import { ArkGameData, ArkGameNumberDataKeys } from './components/utils/gameData';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -8,7 +9,6 @@ import {
     DrawerContent,
     DrawerTrigger,
 } from "@/components/ui/drawer"
-import localForage from 'localforage';
 import {
     Carousel,
     CarouselContent,
@@ -16,12 +16,6 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel"
-
-const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: string, children?: React.ReactNode }> = ({ name, translationContent, answer, children }) => {
-    const navigate = useNavigate();
-    const [gameState, setGameState] = useState<ArkGameData | null>(null)
-    const [answerInput, setAnswerInput] = useState("");
-    const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
     /*
     Global var
     gamesStarted = 0
@@ -46,6 +40,13 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
         }
     }
     **/
+
+const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: string[], children?: React.ReactNode }> = ({ name, translationContent, answer, children }) => {
+    const navigate = useNavigate();
+    const { data: gameState, setData: setGameState } = useData();
+    const [answerInput, setAnswerInput] = useState(gameState ? String(gameState[`${name}UserAnswer` as keyof ArkGameData]) : "");
+    const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
+
     const cleanInput = (input: string) => {
         const lowerInput = input.toLowerCase();
         // Remove everything but letters and spaces
@@ -55,74 +56,69 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
 
     const verifyAnswer = (input: string) => {
         const cleanedInput = cleanInput(input);
-        return cleanedInput === answer;
+        return answer.some(a => a === cleanedInput);
     }
 
     const startGame = async () => {
-        if (gameState) {
-            gameState.gameStarted = true;
-            await localForage.setItem('arkGameState', gameState);
-            setGameState(gameState);
-        }
+        const copyOfGameState = {...gameState};
+        copyOfGameState.gameStarted = true;
+        setGameState(copyOfGameState);
     }
 
-    // Save input to localForage
-    const saveInput = async (input: string) => {
-        await localForage.setItem(`answerInput_${name}`, input);
+    const updateOpenedReferenceCount = async () => {
+        const copyOfGameState = {...gameState};
+        if (!gameState.gameStarted) {
+            copyOfGameState.gameStarted = true;
+        }
+        const key: keyof ArkGameData = `${name}OpenedRefSheetCount` as ArkGameNumberDataKeys;
+        copyOfGameState[key] += 1;
+        setGameState(copyOfGameState);
     }
 
-    // Load localForage data
-    const loadData = async () => {
-        const savedInput = await localForage.getItem(`answerInput_${name}`);
-        if (savedInput) {
-            setAnswerInput(savedInput.toString());
-        }
-
-       const gameState = await localForage.getItem('arkGameState');
-        if (gameState) {
-            setGameState(gameState as ArkGameData);
-        }
-    }
-
-    // Load input when component mounts
     useEffect(() => {
-        loadData();
-    }, []);
-
-    useEffect(() => {
-        const incrementCompletionTime = async () => {
-            setGameState((prevState) => {
-                if (prevState && prevState.gameStarted) {
-                    switch (name) {
-                        case "fiume":
-                            prevState.fiumeCompletionTime += 1;
-                            break;
-                        case "gelata":
-                            prevState.gelataCompletionTime += 1;
-                            break;
-                        case "nuvola":
-                            prevState.nuvolaCompletionTime += 1;
-                            break;
-                        case "scoglio":
-                            prevState.scoglioCompletionTime += 1;
-                            break;
-                    }
-                    return prevState;
-                }
-                return prevState;
-            });
-            await localForage.setItem('arkGameState', gameState);
-        }
-    
-        const intervalId = setInterval(incrementCompletionTime, 1000);
-    
-        // Cleanup function to clear the interval when the component unmounts
-        return () => clearInterval(intervalId);
-    }, [name, gameState]);
-
-    useEffect(() => {
+        // Cache the input
+        setGameState({...gameState, [`${name}UserAnswer`]: answerInput});
+        // Check if answer is correct
         setIsAnswerCorrect(verifyAnswer(answerInput));
     }, [answerInput]);
+
+    const updateCompletionTime = () => {
+        setGameState(prevState => {
+            const copyOfGameState: ArkGameData = {...prevState};
+            const key: keyof(ArkGameData) = `${name}CompletionTime` as ArkGameNumberDataKeys;
+            copyOfGameState[key] += 1;
+            return copyOfGameState;
+        });
+    };
+    
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    
+    useEffect(() => {
+        if (gameState.gameStarted && !isAnswerCorrect) {
+            timerRef.current = setInterval(updateCompletionTime, 1000);
+        }
+    
+        if (isAnswerCorrect) {
+            const otherNames = ["fiume", "gelata", "nuvola", "scoglio"].filter(n => n !== name);
+            setGameState(prevState => {
+                const newState = {...prevState, [`${name}Completed`]: true};
+                if (!newState.allCompleted && otherNames.every(n => newState[`${n}Completed` as keyof ArkGameData])) {
+                    newState.allCompleted = true;
+                    if (newState.firstPlaythrough) {
+                        console.log("should only ever run once")
+                    }
+                }
+                return newState;
+            });
+            
+        }
+    
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
+    }, [isAnswerCorrect, name]);
 
     const answerBottomBorder = answerInput ? (isAnswerCorrect ? "border-green-500": "border-red-600") : "border-white";
     return (
@@ -135,9 +131,7 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
                 <Drawer>
                     <DrawerTrigger asChild={true} className="mr-4">
                         <Button variant="outline" className="mr-4" onClick={() => {
-                            if (gameState && !gameState.gameStarted) {
-                                startGame();
-                            }
+                            updateOpenedReferenceCount();
                         }}>
                             <Icon icon="material-symbols-light:book-sharp" />
                             <span>Reference</span>
@@ -171,8 +165,7 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
                             value={answerInput}
                             onChange={e => {
                                 setAnswerInput(e.target.value);
-                                saveInput(e.target.value);
-                                if (gameState && !gameState.gameStarted) {
+                                if (!gameState.gameStarted) {
                                     startGame();
                                 }
                             }}
@@ -196,7 +189,7 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
 
 const FiumePuzzle: React.FC = () => {
     return (
-        <Puzzle name="fiume" translationContent={<FiumeTranslationContent/>} answer="">
+        <Puzzle name="fiume" translationContent={<FiumeTranslationContent/>} answer={["oceans are oceans our infinite home"]}>
             <div className="flex justify-center items-center h-full w-full">
                 <audio src="https://utfs.io/f/cc4aa6a0-3442-4e52-a2fc-351338920f08-cnabd0.wav" controls/>
             </div>
@@ -278,8 +271,8 @@ const FiumeTranslationContent: React.FC = () => {
             {audioFiles.map((audioFile, index) => {
                 const audioRef = useRef<HTMLAudioElement>(null);
                 return (
-                    <div>
-                        <div key={index} className="relative w-[200px] h-[200px] border-2 rounded-sm bg-slate-100 hover:bg-slate-200 cursor-pointer" onClick={() => playAudio(audioRef)}>
+                    <div key={index}>
+                        <div className="relative w-[200px] h-[200px] border-2 rounded-sm bg-slate-100 hover:bg-slate-200 cursor-pointer" onClick={() => playAudio(audioRef)}>
                             <audio ref={audioRef} src={audioFile.link} style={{ display: 'none' }} />
                             <p className="absolute ml-2 italic text-slate-400">{audioFile.title}</p>
                             <div className="flex justify-center items-center h-full w-full">
@@ -302,8 +295,18 @@ const FiumeTranslationContent: React.FC = () => {
 }
 
 const GelataPuzzle: React.FC = () => {
+    const answers = [
+        "we honor the moon celebrate with us",
+        "we honor moon celebrate with us",
+        "us honor moon celebrate with us",
+        "us honor the moon celebrate with us",
+        "we worship the moon celebrate with us",
+        "we worship moon celebrate with us",
+        "us worship moon celebrate with us",
+        "us worship the moon celebrate with us"
+    ]
     return (
-        <Puzzle name="gelata" translationContent={<GelataPuzzleContent/>} answer="">
+        <Puzzle name="gelata" translationContent={<GelataPuzzleContent/>} answer={answers}>
             <div className="flex justify-center items-center h-full w-full">
                 <img className="w-[50%] h-auto" src="https://utfs.io/f/640c221b-45bd-475d-a797-c8bfed0c50f2-b7ed36.gif"/>
             </div>
@@ -383,8 +386,8 @@ const GelataPuzzleContent: React.FC = () => {
         <div className="flex flex-wrap justify-between gap-x-2 gap-y-8">
             {dancePositions.map((dancePosition, index) => {
                 return (
-                    <div>
-                        <img key={index} src={dancePosition.link} className="border-2 rounded-sm" />
+                    <div key={index}>
+                        <img src={dancePosition.link} className="border-2 rounded-sm" />
                         <p className={`font-ibm w-[320px] ${dancePosition.translation.length > 20 && "text-sm"}`}>{dancePosition.translation}</p>
                     </div>
 
@@ -395,8 +398,14 @@ const GelataPuzzleContent: React.FC = () => {
 }
 
 const NuvolaPuzzle: React.FC = () => {
+    const answers = [
+        "we go get food do you speak forest language",
+        "we go get the food do you speak forest language",
+        "we fly get food do you speak forest language",
+        "we fly get the food do you speak forest language"
+    ]
     return (
-        <Puzzle name="nuvola" translationContent={<NuvolaPuzzleContent/>} answer="we go get food do you speak forest language">
+        <Puzzle name="nuvola" translationContent={<NuvolaPuzzleContent/>} answer={answers}>
             <div className="w-full h-full flex justify-center items-center">
                 <img className="w-full h-auto" src="https://utfs.io/f/94877041-cfe9-40f1-bbcd-5a9a0a28fa5e-i6xnh.svg">
                 </img>
@@ -467,9 +476,9 @@ const NuvolaPuzzleContent: React.FC = () => {
         <div className="flex flex-wrap justify-between gap-x-2 gap-y-8">
             {symbols.map((symbol, index) => {
                 return (
-                    <div>
+                    <div key={index}>
                         <div className="flex justify-center items-center border-2 rounded-sm w-[275px] h-[275px]">
-                            <img key={index} src={symbol.link} className="w-auto h-[256px]" />
+                            <img src={symbol.link} className="w-auto h-[256px]" />
                         </div>
                         <p className="font-ibm">"{symbol.translation}"</p>
                     </div>
@@ -538,15 +547,20 @@ const ScoglioPuzzle: React.FC = () => {
             link: "https://utfs.io/f/02dfd489-5789-40f3-b304-68588fe8a0ba-m47ofe.png"
         }
     ];
-    const answer = "tell me story about your home";
+    const answers = [
+        "tell me story about your home",
+        "tell me a story about your home",
+        "tell me the story about your home",
+    ];
+    const correctAnswer = "tell me story about your home";
     // Split the answer into an array of words
-    const answerWords = answer.split(' ');
+    const answerWords = correctAnswer.split(' ');
     // Filter the signLanguage array to only include items that match a word in the answer
     const relevantSigns = answerWords.map(word => 
         signLanguage.find(sign => sign.translation.toLowerCase() === word)
     ).filter(Boolean); // remove undefined items if any word is not found
     return (
-        <Puzzle name="scoglio" translationContent={<ScoglioPuzzleContent signLanguage={signLanguage}/>} answer={answer}>
+        <Puzzle name="scoglio" translationContent={<ScoglioPuzzleContent signLanguage={signLanguage}/>} answer={answers}>
             <div className="h-full flex justify-center items-center">
                 <div className="w-[50%]">
                     <Carousel>
@@ -571,8 +585,8 @@ const ScoglioPuzzleContent: React.FC<{ signLanguage: { title: string, translatio
         <div className="flex flex-wrap justify-between gap-x-2 gap-y-8">
             {signLanguage.map((handSign, index) => {
                 return (
-                    <div>
-                        <img key={index} src={handSign.link} className="border-2 rounded-sm" />
+                    <div key={index}>
+                        <img src={handSign.link} className="border-2 rounded-sm" />
                         <p className="font-ibm">"{handSign.translation}"</p>
                     </div>
 
