@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { ArkGameData } from './gameData';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -18,16 +19,51 @@ import {
 
 const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: string, children?: React.ReactNode }> = ({ name, translationContent, answer, children }) => {
     const navigate = useNavigate();
+    const [gameState, setGameState] = useState<ArkGameData | null>(null)
     const [answerInput, setAnswerInput] = useState("");
+    const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
+    /*
+    Global var
+    gamesStarted = 0
+
+    Documents
+    {
+        fiume: {
+            completionTime: 0,
+            openedReferenceSheetCount: 0
+        },
+        gelata: {
+            completionTime: 0,
+            openedReferenceSheetCount: 0
+        },
+        nuvola: {
+            completionTime: 0,
+            openedReferenceSheetCount: 0
+        },
+        scoglio: {
+            completionTime: 0,
+            openedReferenceSheetCount: 0
+        }
+    }
+    **/
     const cleanInput = (input: string) => {
         const lowerInput = input.toLowerCase();
         // Remove everything but letters and spaces
         const cleanedInput = lowerInput.replace(/[^a-z ]/g, '');
         return cleanedInput;
     }
+
     const verifyAnswer = (input: string) => {
         const cleanedInput = cleanInput(input);
         return cleanedInput === answer;
+    }
+
+    const startGame = async () => {
+        if (gameState) {
+            gameState.gameStarted = true;
+            await localForage.setItem('arkGameState', gameState);
+            setGameState(gameState);
+        }
     }
 
     // Save input to localForage
@@ -35,21 +71,60 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
         await localForage.setItem(`answerInput_${name}`, input);
     }
 
-    // Load input from localForage
-    const loadInput = async () => {
+    // Load localForage data
+    const loadData = async () => {
         const savedInput = await localForage.getItem(`answerInput_${name}`);
         if (savedInput) {
             setAnswerInput(savedInput.toString());
+        }
+
+       const gameState = await localForage.getItem('arkGameState');
+        if (gameState) {
+            setGameState(gameState as ArkGameData);
         }
     }
 
     // Load input when component mounts
     useEffect(() => {
-        loadInput();
+        loadData();
     }, []);
 
-    const correctAnswer = answerInput && verifyAnswer(answerInput);
-    const answerBottomBorder = answerInput ? (correctAnswer ? "border-green-500": "border-red-600") : "border-white";
+    useEffect(() => {
+        const incrementCompletionTime = async () => {
+            setGameState((prevState) => {
+                if (prevState && prevState.gameStarted) {
+                    switch (name) {
+                        case "fiume":
+                            prevState.fiumeCompletionTime += 1;
+                            break;
+                        case "gelata":
+                            prevState.gelataCompletionTime += 1;
+                            break;
+                        case "nuvola":
+                            prevState.nuvolaCompletionTime += 1;
+                            break;
+                        case "scoglio":
+                            prevState.scoglioCompletionTime += 1;
+                            break;
+                    }
+                    return prevState;
+                }
+                return prevState;
+            });
+            await localForage.setItem('arkGameState', gameState);
+        }
+    
+        const intervalId = setInterval(incrementCompletionTime, 1000);
+    
+        // Cleanup function to clear the interval when the component unmounts
+        return () => clearInterval(intervalId);
+    }, [name, gameState]);
+
+    useEffect(() => {
+        setIsAnswerCorrect(verifyAnswer(answerInput));
+    }, [answerInput]);
+
+    const answerBottomBorder = answerInput ? (isAnswerCorrect ? "border-green-500": "border-red-600") : "border-white";
     return (
         <div className="flex flex-col bg-black w-auto min-h-screen font-ibm">
             {/* Navbar */}
@@ -59,7 +134,11 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
                 </h1>
                 <Drawer>
                     <DrawerTrigger asChild={true} className="mr-4">
-                        <Button variant="outline" className="mr-4">
+                        <Button variant="outline" className="mr-4" onClick={() => {
+                            if (gameState && !gameState.gameStarted) {
+                                startGame();
+                            }
+                        }}>
                             <Icon icon="material-symbols-light:book-sharp" />
                             <span>Reference</span>
                         </Button>
@@ -93,9 +172,13 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
                             onChange={e => {
                                 setAnswerInput(e.target.value);
                                 saveInput(e.target.value);
+                                if (gameState && !gameState.gameStarted) {
+                                    startGame();
+                                }
                             }}
+                            disabled={isAnswerCorrect}
                         />
-                        {answerInput && !correctAnswer && <Icon className="absolute right-1 mt-1" icon="zondicons:close-solid" color="red"/>}
+                        {answerInput && !isAnswerCorrect && <Icon className="absolute right-1 mt-1" icon="zondicons:close-solid" color="red"/>}
                     </div>
                    
                     <div className={`border-t ${answerBottomBorder} w-full`}></div>
@@ -114,6 +197,9 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
 const FiumePuzzle: React.FC = () => {
     return (
         <Puzzle name="fiume" translationContent={<FiumeTranslationContent/>} answer="">
+            <div className="flex justify-center items-center h-full w-full">
+                <audio src="https://utfs.io/f/cc4aa6a0-3442-4e52-a2fc-351338920f08-cnabd0.wav" controls/>
+            </div>
         </Puzzle>
     )
 }
@@ -122,63 +208,63 @@ const FiumeTranslationContent: React.FC = () => {
     const audioFiles = [
         {
             title: "audio_1",
-            translation: "translation here",
+            translation: "Are",
             link: "https://utfs.io/f/9354091b-fffe-4a0f-9d97-47080da9df8c-16p.wav",
         },
         {
             title: "audio_2",
-            translation: "translation here",
+            translation: "We",
             link: "https://utfs.io/f/b8d13f2a-68bc-4a97-b12e-f669c8507d2b-16q.wav",
         },
         {
             title: "audio_3",
-            translation: "translation here",
+            translation: "finite",
             link: "https://utfs.io/f/2dad7793-843c-4f8a-aedf-d32566ca7b5f-16r.wav",
         },
         {
+            title: "audio_3_reversed",
+            translation: "?",
+            link: "https://utfs.io/f/df990042-0d91-481b-bd75-d38192f7d8e8-10wf.wav",
+        },
+        {
             title: "audio_4",
-            translation: "translation here",
+            translation: "Fish",
             link: "https://utfs.io/f/b303e057-844e-47c0-b979-65c9f460c2fe-16s.wav",
         },
         {
             title: "audio_5",
-            translation: "translation here",
+            translation: "Enemies",
             link: "https://utfs.io/f/bc7230d9-4623-4503-93b9-118d64b230de-16t.wav",
         },
         {
             title: "audio_6",
-            translation: "translation here",
+            translation: "Beach",
             link: "https://utfs.io/f/2725f518-fabb-469b-914c-e22d464b5bf0-16u.wav",
         },
         {
             title: "audio_7",
-            translation: "translation here",
+            translation: "Home",
             link: "https://utfs.io/f/7caa030d-98ae-4e49-8542-224cf947ddc1-16v.wav",
         },
         {
+            title: "audio_7_reversed",
+            translation: "Homeless",
+            link: "https://utfs.io/f/712ff910-82bc-4680-933f-f8940c0b1af9-10zv.wav"
+        },
+        {
             title: "audio_8",
-            translation: "translation here",
+            translation: "Land Masses",
             link: "https://utfs.io/f/e2cb669d-9c1a-4fcc-afe7-041df7849b87-16w.wav",
         },
         {
+            title: "audio_8_reversed",
+            translation: "Oceans",
+            link: "https://utfs.io/f/e4263814-553c-4df1-94f3-77983b337c48-110q.wav",
+        },
+        {
             title: "audio_9",
-            translation: "translation here",
-            link: "https://utfs.io/f/b09d3ed4-3533-4ba0-9225-23bdcdf84547-16x.wav",
-        },
-        {
-            title: "audio_10",
-            translation: "translation here",
+            translation: "Our",
             link: "https://utfs.io/f/2ad91e35-27c7-400a-b940-d097c09fe9e0-17j.wav",
-        },
-        {
-            title: "audio_11",
-            translation: "translation here",
-            link: "https://utfs.io/f/7018c6f6-cda2-44b9-b3e7-dadfbe7633a3-17k.wav",
-        },
-        {
-            title: "audio_12",
-            translation: "translation here",
-            link: "https://utfs.io/f/ee460e19-347c-4d3f-bd1a-8bbba821a728-17l.wav"
         }
     ]
     const playAudio = (audioRef: React.RefObject<HTMLAudioElement>) => {
@@ -206,7 +292,7 @@ const FiumeTranslationContent: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <p className="font-ibm">{audioFile.translation}</p>
+                        <p className="font-ibm">"{audioFile.translation}"</p>
                     </div>
 
                 );
@@ -218,6 +304,9 @@ const FiumeTranslationContent: React.FC = () => {
 const GelataPuzzle: React.FC = () => {
     return (
         <Puzzle name="gelata" translationContent={<GelataPuzzleContent/>} answer="">
+            <div className="flex justify-center items-center h-full w-full">
+                <img className="w-[50%] h-auto" src="https://utfs.io/f/640c221b-45bd-475d-a797-c8bfed0c50f2-b7ed36.gif"/>
+            </div>
         </Puzzle>
     )
 }
@@ -225,68 +314,68 @@ const GelataPuzzle: React.FC = () => {
 const GelataPuzzleContent: React.FC = () => {
     const dancePositions = [
         {
+            title: "alien_dance_half_bend",
+            translation: '"I" if done once, "We"/"Us" if they do the motion twice',
+            link: "https://utfs.io/f/465c4fdf-70f9-4b59-b48d-cf1328474dba-js5eo0.png"
+        },
+        {
             title: "alien_dance_lay",
-            translation: "translation here",
+            translation: '"Mean"',
             link: "https://utfs.io/f/57e1731c-0922-4291-ab40-3564e0a13d6e-sg1py6.png"
         },
         {
             title: "alien_dance_close",
-            translation: "translation here",
+            translation: 'The end of a sentence (a period)',
             link: "https://utfs.io/f/f0de506c-7906-4a1e-b48a-a96151964cd2-an6oi6.png"
         },
         {
             title: "alien_dance_leg_down_right",
-            translation: "translation here",
+            translation: '"You"',
             link: "https://utfs.io/f/989563e5-35e5-483c-a7a9-418c4605d1a1-j7502c.png"
         },
         {
             title: "alien_dance_base",
-            translation: "translation here",
+            translation: '"Find"',
             link: "https://utfs.io/f/92b21f7c-0fe8-4a72-8e8b-aecebcfb01a0-tfyas7.png"
         },
         {
             title: "alien_dance_legs_together",
-            translation: "translation here",
+            translation: '"With"',
             link: "https://utfs.io/f/26313695-1978-4ef6-a3c1-a3c25aad6848-frwjtb.png"
         },
         {
             title: "alien_dance_square",
-            translation: "translation here",
+            translation: '"Stone"',
             link: "https://utfs.io/f/ed33dd04-5ea5-4c39-a123-d4fe339d7e4c-wudkgz.png"
         },
         {
             title: "alien_dance_full_bend",
-            translation: "translation here",
+            translation: 'First half of jumping motion that means "Celebrate"',
             link: "https://utfs.io/f/0bd0c6b5-be3a-4d6f-98b9-3a70a135f163-jl461w.png"
         },
         {
-            title: "alien_dance_half_bend",
-            translation: "translation here",
-            link: "https://utfs.io/f/465c4fdf-70f9-4b59-b48d-cf1328474dba-js5eo0.png"
-        },
-        {
             title: "alien_dance_jump",
-            translation: "translation here",
+            translation: '"Second half of jumping motion that means Celebrate"',
             link: "https://utfs.io/f/7303e37c-905c-4df2-bb20-4094248e1e02-tg3tdg.png"
         },
         {
             title: "alien_dance_leg_down_left",
-            translation: "translation here",
+            translation: '"Fast"',
             link: "https://utfs.io/f/04a25e18-ddfd-47e5-8e40-28d821b8b051-j7502i.png"
         },
         {
             title: "alien_dance_triangle",
-            translation: "translation here",
+            translation: '"Moon"',
             link: "https://utfs.io/f/691ace8d-8f41-4882-b768-9d5b16cffd48-81i376.png"
         },
         {
             title: "alien_dance_leg_up_left",
-            translation: "translation here",
+            translation: '"Worship" or "Honor"',
             link: "https://utfs.io/f/0e78ac98-ddda-48ca-98ab-6a7844b987a9-56oich.png"
         },
         {
             title: "alien_dance_leg_up_right",
-            translation: "translation here",
+            translation: '"Hello"',
             link: "https://utfs.io/f/4be1c13c-0a59-477b-86d4-df97619d8078-56oicb.png"
         }
     ]
@@ -296,7 +385,7 @@ const GelataPuzzleContent: React.FC = () => {
                 return (
                     <div>
                         <img key={index} src={dancePosition.link} className="border-2 rounded-sm" />
-                        <p className="font-ibm">{dancePosition.translation}</p>
+                        <p className={`font-ibm w-[320px] ${dancePosition.translation.length > 20 && "text-sm"}`}>{dancePosition.translation}</p>
                     </div>
 
                 );
@@ -307,7 +396,11 @@ const GelataPuzzleContent: React.FC = () => {
 
 const NuvolaPuzzle: React.FC = () => {
     return (
-        <Puzzle name="nuvola" translationContent={<NuvolaPuzzleContent/>} answer="">
+        <Puzzle name="nuvola" translationContent={<NuvolaPuzzleContent/>} answer="we go get food do you speak forest language">
+            <div className="w-full h-full flex justify-center items-center">
+                <img className="w-full h-auto" src="https://utfs.io/f/94877041-cfe9-40f1-bbcd-5a9a0a28fa5e-i6xnh.svg">
+                </img>
+            </div>
         </Puzzle>
     )
 }
@@ -341,13 +434,18 @@ const NuvolaPuzzleContent: React.FC = () => {
         },
         {
             title: "cloud",
-            translation: "Word",
+            translation: "Language",
             link: "https://utfs.io/f/bf828dfa-ec84-48d2-95bf-6f69113886f9-12tjit.svg"
         },
         {
             title: "red_cloud",
             translation: "Speak",
             link: "https://utfs.io/f/53d0a028-d63b-4d5c-8300-46093daba003-f2hfll.svg"
+        },
+        {
+            title: "magnet",
+            translation: "Do",
+            link: "https://utfs.io/f/6a8e65c3-ffb8-4ba1-96e9-f236a2df1ebf-x1f0c6.svg"
         },
         {
             title: "outline_bottom_right",
