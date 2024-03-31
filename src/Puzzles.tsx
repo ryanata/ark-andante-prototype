@@ -180,7 +180,7 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
                         <Icon icon="grommet-icons:return" />
                         <span className="ml-1">Return</span>
                     </Button>
-                    <p className="text-xl text-white">{gameState[`${name}CompletionTime` as ArkGameNumberDataKeys]}</p>
+                    {/* <p className="text-xl text-white">{gameState[`${name}CompletionTime` as ArkGameNumberDataKeys]}</p> */}
                 </div>
             </div>
         </div>
@@ -296,14 +296,10 @@ const FiumeTranslationContent: React.FC = () => {
 
 const GelataPuzzle: React.FC = () => {
     const answers = [
-        "we honor the moon celebrate with us",
-        "we honor moon celebrate with us",
-        "us honor moon celebrate with us",
-        "us honor the moon celebrate with us",
-        "we worship the moon celebrate with us",
-        "we worship moon celebrate with us",
-        "us worship moon celebrate with us",
-        "us worship the moon celebrate with us"
+        "we honor the moon you celebrate with us",
+        "we honor moon you celebrate with us",
+        "we worship the moon you celebrate with us",
+        "we worship moon you celebrate with us",
     ]
     return (
         <Puzzle name="gelata" translationContent={<GelataPuzzleContent/>} answer={answers}>
@@ -338,7 +334,7 @@ const GelataPuzzleContent: React.FC = () => {
         },
         {
             title: "alien_dance_base",
-            translation: '"Find"',
+            translation: '"Sky"',
             link: "https://utfs.io/f/92b21f7c-0fe8-4a72-8e8b-aecebcfb01a0-tfyas7.png"
         },
         {
@@ -348,7 +344,7 @@ const GelataPuzzleContent: React.FC = () => {
         },
         {
             title: "alien_dance_square",
-            translation: '"Stone"',
+            translation: '"Night"',
             link: "https://utfs.io/f/ed33dd04-5ea5-4c39-a123-d4fe339d7e4c-wudkgz.png"
         },
         {
@@ -363,7 +359,7 @@ const GelataPuzzleContent: React.FC = () => {
         },
         {
             title: "alien_dance_leg_down_left",
-            translation: '"Fast"',
+            translation: '"Dance"',
             link: "https://utfs.io/f/04a25e18-ddfd-47e5-8e40-28d821b8b051-j7502i.png"
         },
         {
@@ -378,7 +374,7 @@ const GelataPuzzleContent: React.FC = () => {
         },
         {
             title: "alien_dance_leg_up_right",
-            translation: '"Hello"',
+            translation: '"Happy"',
             link: "https://utfs.io/f/4be1c13c-0a59-477b-86d4-df97619d8078-56oicb.png"
         }
     ]
@@ -399,15 +395,17 @@ const GelataPuzzleContent: React.FC = () => {
 
 const NuvolaPuzzle: React.FC = () => {
     const answers = [
-        "we go get food do you speak forest language",
-        "we go get the food do you speak forest language",
-        "we fly get food do you speak forest language",
-        "we fly get the food do you speak forest language"
+        "you go forest you get food we eat",
+        "you go to forest you get food we eat",
+        "you go to the forest you get food we eat",
+        "you go forest you get the food we eat",
+        "you go to forest you get the food we eat",
+        "you go to the forest you get the food we eat",
     ]
     return (
         <Puzzle name="nuvola" translationContent={<NuvolaPuzzleContent/>} answer={answers}>
             <div className="w-full h-full flex justify-center items-center">
-                <img className="w-full h-auto" src="https://utfs.io/f/94877041-cfe9-40f1-bbcd-5a9a0a28fa5e-i6xnh.svg">
+                <img className="w-full h-auto" src="https://utfs.io/f/c4965ae0-96f0-4f16-8d73-903579da00de-9dzywo.svg">
                 </img>
             </div>
         </Puzzle>
@@ -450,11 +448,6 @@ const NuvolaPuzzleContent: React.FC = () => {
             title: "red_cloud",
             translation: "Speak",
             link: "https://utfs.io/f/53d0a028-d63b-4d5c-8300-46093daba003-f2hfll.svg"
-        },
-        {
-            title: "magnet",
-            translation: "Do",
-            link: "https://utfs.io/f/6a8e65c3-ffb8-4ba1-96e9-f236a2df1ebf-x1f0c6.svg"
         },
         {
             title: "outline_bottom_right",
