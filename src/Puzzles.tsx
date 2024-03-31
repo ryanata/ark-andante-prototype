@@ -370,7 +370,7 @@ const GelataPuzzleContent: React.FC = () => {
         },
         {
             title: "alien_dance_jump",
-            translation: '"Second half of jumping motion that means Celebrate"',
+            translation: 'Second half of jumping motion that means "Celebrate"',
             link: "https://utfs.io/f/7303e37c-905c-4df2-bb20-4094248e1e02-tg3tdg.png"
         },
         {
