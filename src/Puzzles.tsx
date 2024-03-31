@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { once, recordGameStats, countGamePlayed } from './components/utils/apiUtils';
 import { useData } from './components/utils/DataContext';
 import { Button } from '@/components/ui/button';
 import { ArkGameData, ArkGameNumberDataKeys } from './components/utils/gameData';
@@ -16,36 +17,16 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel"
-    /*
-    Global var
-    gamesStarted = 0
 
-    Documents
-    {
-        fiume: {
-            completionTime: 0,
-            openedReferenceSheetCount: 0
-        },
-        gelata: {
-            completionTime: 0,
-            openedReferenceSheetCount: 0
-        },
-        nuvola: {
-            completionTime: 0,
-            openedReferenceSheetCount: 0
-        },
-        scoglio: {
-            completionTime: 0,
-            openedReferenceSheetCount: 0
-        }
-    }
-    **/
+const countGamePlayedOnce = once(countGamePlayed);
+const recordGameStatsOnce = once(recordGameStats);
 
 const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: string[], children?: React.ReactNode }> = ({ name, translationContent, answer, children }) => {
     const navigate = useNavigate();
     const { data: gameState, setData: setGameState } = useData();
     const [answerInput, setAnswerInput] = useState(gameState ? String(gameState[`${name}UserAnswer` as keyof ArkGameData]) : "");
     const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
+    const [gameStarted, setGameStarted] = useState(false);
 
     const cleanInput = (input: string) => {
         const lowerInput = input.toLowerCase();
@@ -60,15 +41,25 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
     }
 
     const startGame = async () => {
-        const copyOfGameState = {...gameState};
-        copyOfGameState.gameStarted = true;
-        setGameState(copyOfGameState);
+        if (!gameState.gameStarted) {
+            const copyOfGameState = {...gameState};
+            copyOfGameState.gameStarted = true;
+            setGameStarted(true);
+            if (copyOfGameState.firstPlaythrough) {
+                countGamePlayedOnce();
+            }
+            setGameState(copyOfGameState);
+        }
     }
 
     const updateOpenedReferenceCount = async () => {
         const copyOfGameState = {...gameState};
         if (!gameState.gameStarted) {
             copyOfGameState.gameStarted = true;
+            setGameStarted(true);
+            if (copyOfGameState.firstPlaythrough) {
+                countGamePlayedOnce();
+            }
         }
         const key: keyof ArkGameData = `${name}OpenedRefSheetCount` as ArkGameNumberDataKeys;
         copyOfGameState[key] += 1;
@@ -99,13 +90,23 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
         }
     
         if (isAnswerCorrect) {
-            const otherNames = ["fiume", "gelata", "nuvola", "scoglio"].filter(n => n !== name);
+            const names = ["fiume", "gelata", "nuvola", "scoglio"];
+            const otherNames = names.filter(n => n !== name);
+            
             setGameState(prevState => {
                 const newState = {...prevState, [`${name}Completed`]: true};
                 if (!newState.allCompleted && otherNames.every(n => newState[`${n}Completed` as keyof ArkGameData])) {
                     newState.allCompleted = true;
                     if (newState.firstPlaythrough) {
-                        console.log("should only ever run once")
+                        const allCompletionAndRefCount = names.map(n => {
+                            return {
+                                [`${n}CompletionTime`]: gameState[`${n}CompletionTime` as ArkGameNumberDataKeys],
+                                [`${n}OpenedRefSheetCount`]: gameState[`${n}OpenedRefSheetCount` as ArkGameNumberDataKeys]
+                            }
+                        }).reduce((prev, curr) => {
+                            return {...prev, ...curr};
+                        }, {});
+                        recordGameStatsOnce(allCompletionAndRefCount);
                     }
                 }
                 return newState;
@@ -118,7 +119,7 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
                 clearInterval(timerRef.current);
             }
         };
-    }, [isAnswerCorrect, name]);
+    }, [isAnswerCorrect, name, gameStarted]);
 
     const answerBottomBorder = answerInput ? (isAnswerCorrect ? "border-green-500": "border-red-600") : "border-white";
     return (
@@ -165,9 +166,7 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
                             value={answerInput}
                             onChange={e => {
                                 setAnswerInput(e.target.value);
-                                if (!gameState.gameStarted) {
-                                    startGame();
-                                }
+                                startGame();
                             }}
                             disabled={isAnswerCorrect}
                         />
@@ -181,6 +180,7 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
                         <Icon icon="grommet-icons:return" />
                         <span className="ml-1">Return</span>
                     </Button>
+                    <p className="text-xl text-white">{gameState[`${name}CompletionTime` as ArkGameNumberDataKeys]}</p>
                 </div>
             </div>
         </div>
