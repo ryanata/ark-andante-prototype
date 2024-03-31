@@ -7,6 +7,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import { DataProvider } from './components/utils/DataContext.tsx';
+import { Toaster } from "@/components/ui/toaster"
 import '../app/globals.css';
 
 const router = createBrowserRouter([
@@ -38,6 +39,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <DataProvider>
       <RouterProvider router={router} />
+      <Toaster />
     </DataProvider>
   </React.StrictMode>,
 )

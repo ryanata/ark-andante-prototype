@@ -17,6 +17,8 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel"
+import { useToast } from "@/components/ui/use-toast"
+
 
 const countGamePlayedOnce = once(countGamePlayed);
 const recordGameStatsOnce = once(recordGameStats);
@@ -27,6 +29,7 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
     const [answerInput, setAnswerInput] = useState(gameState ? String(gameState[`${name}UserAnswer` as keyof ArkGameData]) : "");
     const [isAnswerCorrect, setIsAnswerCorrect] = useState(false);
     const [gameStarted, setGameStarted] = useState(false);
+    const { toast } = useToast()
 
     const cleanInput = (input: string) => {
         const lowerInput = input.toLowerCase();
@@ -38,6 +41,16 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
     const verifyAnswer = (input: string) => {
         const cleanedInput = cleanInput(input);
         return answer.some(a => a === cleanedInput);
+    }
+
+    const raiseHint = (input: string) => {
+        // If question mark is in their answer, give me a hint via toast
+        if (input.includes("?")) {
+            toast({
+                title: "Hint",
+                description: "The question mark isn't in the final answer. Observe that all reversed sound files correspond to the opposite translation of the original sound file.",
+            })
+        }
     }
 
     const startGame = async () => {
@@ -166,6 +179,9 @@ const Puzzle: React.FC<{ name: string, translationContent: JSX.Element, answer: 
                             value={answerInput}
                             onChange={e => {
                                 setAnswerInput(e.target.value);
+                                if (name === "fiume") {
+                                    raiseHint(e.target.value);
+                                }
                                 startGame();
                             }}
                             disabled={isAnswerCorrect}
@@ -201,62 +217,62 @@ const FiumeTranslationContent: React.FC = () => {
     const audioFiles = [
         {
             title: "audio_1",
-            translation: "Are",
+            translation: '"Are"',
             link: "https://utfs.io/f/9354091b-fffe-4a0f-9d97-47080da9df8c-16p.wav",
         },
         {
             title: "audio_2",
-            translation: "We",
+            translation: '"We"',
             link: "https://utfs.io/f/b8d13f2a-68bc-4a97-b12e-f669c8507d2b-16q.wav",
         },
         {
             title: "audio_3",
-            translation: "finite",
+            translation: '"finite"',
             link: "https://utfs.io/f/2dad7793-843c-4f8a-aedf-d32566ca7b5f-16r.wav",
         },
         {
             title: "audio_3_reversed",
-            translation: "?",
+            translation: '?',
             link: "https://utfs.io/f/df990042-0d91-481b-bd75-d38192f7d8e8-10wf.wav",
         },
         {
             title: "audio_4",
-            translation: "Fish",
+            translation: '"Fish"',
             link: "https://utfs.io/f/b303e057-844e-47c0-b979-65c9f460c2fe-16s.wav",
         },
         {
             title: "audio_5",
-            translation: "Enemies",
+            translation: '"Enemies"',
             link: "https://utfs.io/f/bc7230d9-4623-4503-93b9-118d64b230de-16t.wav",
         },
         {
             title: "audio_6",
-            translation: "Beach",
+            translation: '"Beach"',
             link: "https://utfs.io/f/2725f518-fabb-469b-914c-e22d464b5bf0-16u.wav",
         },
         {
             title: "audio_7",
-            translation: "Home",
+            translation: '"Home"',
             link: "https://utfs.io/f/7caa030d-98ae-4e49-8542-224cf947ddc1-16v.wav",
         },
         {
             title: "audio_7_reversed",
-            translation: "Homeless",
+            translation: '"Homeless"',
             link: "https://utfs.io/f/712ff910-82bc-4680-933f-f8940c0b1af9-10zv.wav"
         },
         {
             title: "audio_8",
-            translation: "Land Masses",
+            translation: '"Land Masses"',
             link: "https://utfs.io/f/e2cb669d-9c1a-4fcc-afe7-041df7849b87-16w.wav",
         },
         {
             title: "audio_8_reversed",
-            translation: "Oceans",
+            translation: '"Oceans"',
             link: "https://utfs.io/f/e4263814-553c-4df1-94f3-77983b337c48-110q.wav",
         },
         {
             title: "audio_9",
-            translation: "Our",
+            translation: '"Our"',
             link: "https://utfs.io/f/2ad91e35-27c7-400a-b940-d097c09fe9e0-17j.wav",
         }
     ]
@@ -285,7 +301,7 @@ const FiumeTranslationContent: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <p className="font-ibm">"{audioFile.translation}"</p>
+                        <p className="font-ibm">{audioFile.translation}</p>
                     </div>
 
                 );
@@ -304,7 +320,7 @@ const GelataPuzzle: React.FC = () => {
     return (
         <Puzzle name="gelata" translationContent={<GelataPuzzleContent/>} answer={answers}>
             <div className="flex justify-center items-center h-full w-full">
-                <img className="w-[50%] h-auto" src="https://utfs.io/f/640c221b-45bd-475d-a797-c8bfed0c50f2-b7ed36.gif"/>
+                <video className="w-auto h-[75%]" src="https://utfs.io/f/e36c4619-0da7-486b-b0ff-bf118d40c949-b7ed36.mp4" controls/>
             </div>
         </Puzzle>
     )
