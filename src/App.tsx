@@ -29,6 +29,8 @@ import {
 
 const App: React.FC = () => {
   const isTablet = useMediaQuery('(max-width: 1430px)');
+  const isTabletShrink = useMediaQuery('(min-width: 1200px)');
+
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [completionTime, setCompletionTime] = useState<string>("");
   const divRef = useRef<HTMLDivElement>(null);
@@ -81,7 +83,7 @@ const App: React.FC = () => {
 
   return (
     <div className={`flex flex-col justify-center items-center w-auto min-h-screen ${topPadding}`} style={{ backgroundImage: `url(${bgImg})`, backgroundRepeat: 'no-repeat', backgroundSize: 'cover' }}>
-        <div>
+        <div className="w-full">
           <div className="absolute top-2 right-2">
             <Dialog>
               <DialogTrigger asChild>
@@ -118,15 +120,19 @@ const App: React.FC = () => {
           </div>
           <div className="flex flex-wrap gap-x-2 gap-y-8 justify-between items-center w-full px-16">
               {aliens.map((alien, index) => (
-                  <Card key={index} title={alien.title} image={alien.image} description={alien.description} completed={gameData[`${alien.title.toLowerCase()}Completed` as ArkGameBooleanDataKeys]}/>
+                  <Card key={index} title={alien.title} image={alien.image} description={alien.description} shrink={isTablet && isTabletShrink} completed={gameData[`${alien.title.toLowerCase()}Completed` as ArkGameBooleanDataKeys]}/>
               ))}
           </div>
           {
-            completionTime &&
+            completionTime ?
             <div className={`flex flex-col justify-center items-center text-white font-bold pt-2 tracking-wider font-teko`} style={{fontSize: finishedTextSize}}>
                 <h1>Congrats you have finished all tasks in <span className="text-green-500">{completionTime}</span>!</h1>
                 <h2 className="mb-2">Please fill out our <a target="_blank" className="underline decoration-[#3344dd] hover:decoration-[#bb1122]" href="https://docs.google.com/forms/d/e/1FAIpQLSfarbdcxLbog54gW8q6dEYhzLeU4v936CKNuQCAaLOn1HB69Q/viewform">survey</a> for a class project.</h2>
                 <Button onClick={resetGame} size="xl" variant="gradient" className={`tracking-wider text-${finishedButtonSize}`}>Play Again</Button>
+            </div>
+            :
+            <div className="flex justify-center items-center text-white font-bold pt-4 tracking-wider font-teko" style={{fontSize: finishedTextSize}}>
+              <h2 className="mb-2">Please fill out our <a target="_blank" className="underline decoration-[#3344dd] hover:decoration-[#bb1122]" href="https://docs.google.com/forms/d/e/1FAIpQLSfarbdcxLbog54gW8q6dEYhzLeU4v936CKNuQCAaLOn1HB69Q/viewform">survey</a> for a class project.</h2>
             </div>
           }
         </div>
@@ -139,13 +145,14 @@ interface CardProps {
   image: string;
   description: string;
   completed: boolean;
+  shrink: boolean;
 }
 
-const Card: React.FC<CardProps> = ({ title, image, description, completed }) => {
+const Card: React.FC<CardProps> = ({ title, image, description, completed, shrink }) => {
   const navigate = useNavigate();
   return (
     <div 
-      className="w-80 h-[420px] rounded-2xl font-teko tracking-widest text-white pt-4 px-3 overflow-none cursor-pointer border border-seagreen hover:border-4 transform hover:scale-105 transition-transform duration-200" 
+      className={`${shrink ? "w-[260px]" : "w-80"} ${shrink ? "h-[400px]" : "h-[420px]"} rounded-2xl font-teko tracking-widest text-white pt-4 px-3 overflow-none cursor-pointer border border-seagreen hover:border-4 transform hover:scale-105 transition-transform duration-200`}
       style={{background: 'linear-gradient(153deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0) 100%)', backdropFilter: 'blur(22px)'}}
       onClick={() => navigate(title.toLowerCase())}
     >      
@@ -155,7 +162,7 @@ const Card: React.FC<CardProps> = ({ title, image, description, completed }) => 
       <div className="flex justify-center h-52">
         <img src={image} alt="Audio Alien" />
       </div>
-      <p className="text-2xl tracking-wide font-light mt-2">
+      <p className={`${shrink ? "text-xl" : "text-2xl"} tracking-wide font-light mt-2`}>
         {description}
       </p>
       <div className="absolute bottom-2 right-3">
